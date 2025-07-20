@@ -6,23 +6,41 @@ class APIClient {
   }
 
   async getAuthHeaders() {
+  console.log('🔑 Getting auth headers...')
+  try {
     const { supabase } = await import('./supabase')
+    console.log('📦 Supabase imported')
+    
     const { data: { session } } = await supabase.auth.getSession()
+    console.log('👤 Session obtained:', session ? 'exists' : 'null')
     
     if (session?.access_token) {
+      console.log('✅ Using authenticated headers')
       return {
         'Authorization': `Bearer ${session.access_token}`,
         'Content-Type': 'application/json'
       }
     }
     
+    console.log('❌ Using non-authenticated headers')
+    return {
+      'Content-Type': 'application/json'
+    }
+  } catch (error) {
+    console.error('💥 Error getting auth headers:', error)
     return {
       'Content-Type': 'application/json'
     }
   }
+}
 
   async request(endpoint, options = {}) {
+  console.log('🚀 API request starting for:', endpoint)
+  
+  try {
+    console.log('🔑 Getting headers...')
     const headers = await this.getAuthHeaders()
+    console.log('✅ Headers obtained:', headers)
     
     const config = {
       headers,
@@ -34,35 +52,17 @@ class APIClient {
     }
 
     const url = `${this.baseURL}${endpoint}`
-    console.log('API Request:', url, config)
-
-    try {
-      const response = await fetch(url, config)
-      console.log('API Response status:', response.status)
-      
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error('API Error response:', errorText)
-        
-        let errorMessage = `HTTP ${response.status}`
-        try {
-          const errorData = JSON.parse(errorText)
-          errorMessage = errorData.error || errorData.message || errorMessage
-        } catch (e) {
-          errorMessage = errorText || errorMessage
-        }
-        
-        throw new Error(errorMessage)
-      }
-
-      const data = await response.json()
-      console.log('API Response data:', data)
-      return data
-    } catch (error) {
-      console.error('API Request failed:', error)
-      throw error
-    }
+    console.log('📡 Making fetch request to:', url)
+    
+    const response = await fetch(url, config)
+    console.log('📥 Response received:', response.status)
+    
+    // остальной код...
+  } catch (error) {
+    console.error('💥 API Request failed:', error)
+    throw error
   }
+}
 
   // Tests
   async getTests() {
