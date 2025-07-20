@@ -23,7 +23,7 @@ const testSchema = Joi.object({
 });
 
 const resultSchema = Joi.object({
-  test_id: Joi.string().uuid().required(),
+  test_id: Joi.string().required(), // Изменили с uuid на string
   test_title: Joi.string().required(),
   test_category: Joi.string().required(),
   total_score: Joi.number().integer().min(0).required(),
@@ -134,9 +134,8 @@ router.get('/:id', optionalAuth, async (req, res) => {
   try {
     const { id } = req.params;
     
-    if (!id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-      return res.status(400).json({ error: 'Invalid test ID format' });
-    }
+    // Убираем проверку UUID формата, так как у нас строковые ID
+    console.log('Getting test with ID:', id);
     
     const test = await getTestById(id);
     
@@ -152,6 +151,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
       test.user_attempts = userResults.filter(result => result.test_id === id).length;
     }
     
+    console.log('Test found:', test.title);
     res.json(test);
   } catch (error) {
     console.error('Error fetching test:', error);
@@ -274,6 +274,7 @@ router.post('/:id/submit', authMiddleware, validateBody(resultSchema), async (re
       created_at: new Date().toISOString()
     };
     
+    console.log('Saving test result:', resultData);
     const savedResult = await saveTestResult(resultData);
     
     res.status(201).json({

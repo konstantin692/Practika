@@ -79,6 +79,7 @@ const getAllTests = async () => {
       .order('created_at', { ascending: false });
     
     if (error) throw error;
+    console.log('Found tests:', data?.length || 0);
     return data || [];
   } catch (error) {
     console.error('Error getting tests:', error);
@@ -89,6 +90,8 @@ const getAllTests = async () => {
 // Получение теста по ID
 const getTestById = async (testId) => {
   try {
+    console.log('Getting test by ID from database:', testId);
+    
     const { data, error } = await supabaseAdmin
       .from('tests')
       .select('*')
@@ -96,7 +99,16 @@ const getTestById = async (testId) => {
       .eq('is_active', true)
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('Database error:', error);
+      if (error.code === 'PGRST116') {
+        console.log('Test not found in database');
+        return null;
+      }
+      throw error;
+    }
+    
+    console.log('Test found in database:', data?.title);
     return data;
   } catch (error) {
     console.error('Error getting test by ID:', error);
@@ -107,19 +119,30 @@ const getTestById = async (testId) => {
 // Сохранение результата теста
 const saveTestResult = async (resultData) => {
   try {
+    console.log('Saving test result to database:', resultData);
+    
     const { data, error } = await supabaseAdmin
       .from('test_results')
       .insert(resultData)
       .select()
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error saving test result:', error);
+      throw error;
+    }
     
     // Увеличиваем счетчик прохождений теста
-    await supabaseAdmin.rpc('increment_test_completed_count', {
-      test_id: resultData.test_id
-    });
+    try {
+      await supabaseAdmin.rpc('increment_test_completed_count', {
+        test_id: resultData.test_id
+      });
+    } catch (rpcError) {
+      console.error('Error incrementing test count:', rpcError);
+      // Не прерываем выполнение, если RPC функция не работает
+    }
     
+    console.log('Test result saved successfully:', data.id);
     return data;
   } catch (error) {
     console.error('Error saving test result:', error);
@@ -130,6 +153,8 @@ const saveTestResult = async (resultData) => {
 // Получение результатов пользователя
 const getUserResults = async (userId, limit = 50) => {
   try {
+    console.log('Getting user results for:', userId);
+    
     const { data, error } = await supabaseAdmin
       .from('test_results')
       .select('*')
@@ -138,6 +163,8 @@ const getUserResults = async (userId, limit = 50) => {
       .limit(limit);
     
     if (error) throw error;
+    
+    console.log('Found user results:', data?.length || 0);
     return data || [];
   } catch (error) {
     console.error('Error getting user results:', error);
@@ -202,11 +229,11 @@ const getAnalyticsData = async () => {
     ]);
 
     return {
-      totalUsers,
-      totalTests,
-      totalResults,
+      totalUsers: totalUsers || 0,
+      totalTests: totalTests || 0,
+      totalResults: totalResults || 0,
       topTests: topTests.data || [],
-      averageResultsPerUser: totalUsers > 0 ? Math.round(totalResults / totalUsers) : 0
+      averageResultsPerUser: totalUsers > 0 ? Math.round((totalResults || 0) / totalUsers) : 0
     };
   } catch (error) {
     console.error('Error getting analytics data:', error);
