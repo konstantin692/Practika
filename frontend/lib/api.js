@@ -61,24 +61,21 @@ class APIClient {
     
     const response = await fetch(url, config)
     console.log('📥 Response received:', response.status)
+    console.log('🔍 Response ok:', response.ok)
+    console.log('🔍 Response headers:', response.headers.get('content-type'))
     
     if (!response.ok) {
+      console.log('❌ Response not ok, reading error...')
       const errorText = await response.text()
       console.error('API Error response:', errorText)
-      
-      let errorMessage = `HTTP ${response.status}`
-      try {
-        const errorData = JSON.parse(errorText)
-        errorMessage = errorData.error || errorData.message || errorMessage
-      } catch (e) {
-        errorMessage = errorText || errorMessage
-      }
-      
-      throw new Error(errorMessage)
+      throw new Error(`HTTP ${response.status}: ${errorText}`)
     }
 
+    console.log('✅ Response ok, parsing JSON...')
     const data = await response.json()
-    console.log('API Response data:', data)
+    console.log('📋 API Response data:', data)
+    console.log('📋 Data type:', typeof data)
+    console.log('📋 Data keys:', Object.keys(data || {}))
     return data
     
   } catch (error) {
