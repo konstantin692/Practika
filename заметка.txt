@@ -1,0 +1,2 @@
+сделал до lib/testData.js
+components/TestRunner.js не делал, продолжить от него
