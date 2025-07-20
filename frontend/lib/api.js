@@ -6,25 +6,24 @@ class APIClient {
   }
 
   async getAuthHeaders() {
-  console.log('🔑 Getting auth headers...')
+  console.log('🔑 Getting auth headers (simplified)...')
+  
   try {
+    // Попробуем получить токен быстро
     const { supabase } = await import('./supabase')
-    console.log('📦 Supabase imported')
+    const { data: { user } } = await supabase.auth.getUser()
     
-    // Добавляем timeout для getSession
-    const sessionPromise = supabase.auth.getSession()
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Session timeout')), 5000)
-    )
-    
-    const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise])
-    console.log('👤 Session obtained:', session ? 'exists' : 'null')
-    
-    if (session?.access_token) {
-      console.log('✅ Using authenticated headers')
-      return {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json'
+    if (user) {
+      // Получаем текущую сессию синхронно
+      const session = supabase.auth.session || await supabase.auth.getSession()
+      const token = session?.data?.session?.access_token || session?.access_token
+      
+      if (token) {
+        console.log('✅ Using authenticated headers')
+        return {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       }
     }
     
@@ -33,8 +32,7 @@ class APIClient {
       'Content-Type': 'application/json'
     }
   } catch (error) {
-    console.error('💥 Error getting auth headers:', error)
-    console.log('🔄 Falling back to non-authenticated headers')
+    console.error('💥 Auth error, using simple headers:', error)
     return {
       'Content-Type': 'application/json'
     }
