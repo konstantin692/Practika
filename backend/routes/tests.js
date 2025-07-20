@@ -306,7 +306,7 @@ router.get('/:id/results', authMiddleware, adminOnly, async (req, res) => {
       .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
     
     if (error) throw error;
-    
+    /*
     res.json({
       results: data || [],
       pagination: {
@@ -315,7 +315,8 @@ router.get('/:id/results', authMiddleware, adminOnly, async (req, res) => {
         offset: parseInt(offset),
         has_more: parseInt(offset) + parseInt(limit) < count
       }
-    });
+    });*/
+    res.json(data)
   } catch (error) {
     console.error('Error fetching test results:', error);
     res.status(500).json({ error: 'Failed to fetch test results' });
