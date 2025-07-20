@@ -11,7 +11,13 @@ class APIClient {
     const { supabase } = await import('./supabase')
     console.log('📦 Supabase imported')
     
-    const { data: { session } } = await supabase.auth.getSession()
+    // Добавляем timeout для getSession
+    const sessionPromise = supabase.auth.getSession()
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Session timeout')), 5000)
+    )
+    
+    const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise])
     console.log('👤 Session obtained:', session ? 'exists' : 'null')
     
     if (session?.access_token) {
@@ -28,6 +34,7 @@ class APIClient {
     }
   } catch (error) {
     console.error('💥 Error getting auth headers:', error)
+    console.log('🔄 Falling back to non-authenticated headers')
     return {
       'Content-Type': 'application/json'
     }
