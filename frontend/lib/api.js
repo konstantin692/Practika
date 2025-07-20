@@ -62,7 +62,25 @@ class APIClient {
     const response = await fetch(url, config)
     console.log('📥 Response received:', response.status)
     
-    // остальной код...
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('API Error response:', errorText)
+      
+      let errorMessage = `HTTP ${response.status}`
+      try {
+        const errorData = JSON.parse(errorText)
+        errorMessage = errorData.error || errorData.message || errorMessage
+      } catch (e) {
+        errorMessage = errorText || errorMessage
+      }
+      
+      throw new Error(errorMessage)
+    }
+
+    const data = await response.json()
+    console.log('API Response data:', data)
+    return data
+    
   } catch (error) {
     console.error('💥 API Request failed:', error)
     throw error
